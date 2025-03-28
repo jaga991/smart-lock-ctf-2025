@@ -1,0 +1,36 @@
+[Full Console Output + ESP32 Logs]
+
+[1] Connecting to "Smart Lock [Group 11]"...
+[!] Serial Port: COM7
+[!] Connected.
+Starting AUTH opcode flood (0x01 to 0xFF)...
+[!] --> Command:  [63, 63, 63, 63, 63, 63, 63]
+[!] <-- Response: [255]
+[16:07:49.808] [001] AUTH=0x1 → Response: [255]
+[!] --> Command:  [63, 63, 63, 63, 63, 63, 63]
+[16:07:49.808] [CMD 001] AUTH=0x1 → Exception: [WinError -2147023673] The operation was canceled by the user
+[!] --> Command:  [63, 63, 63, 63, 63, 63, 63]
+[16:07:49.977] [CMD 002] AUTH=0x2 → Exception: Not connected
+[!] --> Command:  [63, 63, 63, 63, 63, 63, 63]
+[16:07:49.992] [CMD 003] AUTH=0x3 → Exception: Not connected
+[!] --> Command:  [63, 63, 63, 63, 63, 63, 63]
+[16:07:50.008] [CMD 004] AUTH=0x4 → Exception: Not connected
+[!] --> Command:  [63, 63, 63, 63, 63, 63, 63]
+[16:07:50.024] [CMD 005] AUTH=0x5 → Exception: Not connected
+[!] --> Command:  [63, 63, 63, 63, 63, 63, 63]
+[16:07:50.025] [CMD 006] AUTH=0x6 → Exception: Not connected
+[!] --> Command:  [63, 63, 63, 63, 63, 63, 63]
+[16:07:50.040] [CMD 007] AUTH=0x7 → Exception: Not connected
+[!] --> Command:  [63, 63, 63, 63, 63, 63, 63]
+[16:07:50.055] [CMD 008] AUTH=0x8 → Exception: Not connected
+[!] --> Command:  [63, 63, 63, 63, 63, 63, 63]
+[16:07:50.070] [CMD 009] AUTH=0x9 → Exception: Not connected
+[!] --> Command:  [63, 63, 63, 63, 63, 63, 63]
+[16:07:50.086] [CMD 010] AUTH=0xa → Exception: Not connected
+[!] Disconnecting...
+
+[ Full ESP32 Logs from this session]
+[16:07:50.218]  ESP → I (353) esp_image: segment 3: paddr=0016b044 vaddr=40805c98 size
+[16:07:50.218]  ESP → [Bluetooth] User Connected
+[16:07:50.218]  ESP → [Error] Code: 0x??????
+[16:07:50.218]  ESP → [Error] Code: 0x??????

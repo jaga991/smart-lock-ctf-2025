@@ -1,2 +1,2 @@
 @REM Start Smartlock GUI demo
-.\venv\python Smartlock.py %1
+.\venv\python openCloseFloodTest.py %1

