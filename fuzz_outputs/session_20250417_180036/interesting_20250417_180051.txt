@@ -1,0 +1,7 @@
+Input: 0x0 0xaa 0x2
+Logs:
+  I (348) esp_image: segment 3: paddr=0016b044 vaddr=40805c98 size[Bluetooth] Received command: 0x00 (Authenticate)
+  [Auth] Authentication Sucessfull
+  [State] Device state: Authenticated
+  [Bluetooth] Received command: 0xAA (Secret)
+  [Bluetooth] Received command: 0x02 (Close)

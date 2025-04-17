@@ -1,0 +1,22 @@
+Input: 0xaa 0x0
+Logs:
+  I (66) boot:  3 coredump         Unknown data     01 03 003f0000 00010000
+  I (73) boot: End of partition table
+  I (76) boot: Defaulting to factory image
+  I (80) esp_image: segment 0: paddr=00010020 vaddr=420f0020 size=6a358h (435032) map
+  I (241) esp_image: segment 1: paddr=0007a380 vaddr=40800000 size=05c98h ( 23704) load
+  I (252) esp_image: segment 2: paddr=00080020 vaddr=42000020 size=eb01ch (962588) map
+  I (592) esp_image: segment 3: paddr=0016b044 vaddr=40805c98 size=0ff8ch ( 65420) load
+  I (620) esp_image: segment 4: paddr=0017afd8 vaddr=40815c30 size=02b9ch ( 11164) load
+  I (626) esp_image: segment 5: paddr=0017db7c vaddr=50000000 size=0001ch (    28) load
+  I (638) boot: Loaded app from partition at offset 0x10000
+  I (639) boot: Disabling RNG early entropy source...
+  
+  [Bluetooth] User Connected
+  [Bluetooth] Received command: 0x00 (Authenticate)
+  [Auth] Authentication Sucessfull
+  [State] Device state: Authenticated
+  [Bluetooth] Received command: 0xAA (Secret)
+  [Bluetooth] Received command: 0x00 (Authenticate)
+  [Auth] Authentication Sucessfull
+  [State] Device state: Authenticated

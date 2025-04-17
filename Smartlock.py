@@ -49,14 +49,14 @@ def mutate_input(seed):
 
 # --- Interesting Detection ---
 def is_interesting(responses, logs):
-    interesting_keywords = ["secret", "reboot", "error", "state", "debug", "invalid"]
+    global seen_log_lines
+    interesting = False
+
     for line in logs:
-        if any(k in line.lower() for k in interesting_keywords):
-            return True
-    for res in responses:
-        if isinstance(res, list) and res and res[0] not in [0, 1, 2, 3, 4]:
-            return True
-    return False
+        if line not in seen_log_lines:
+            seen_log_lines.add(line)
+            interesting = True
+    return interesting
 
 # --- Save Result ---
 def save_input(input_seq, logs, label="interesting"):
@@ -127,18 +127,18 @@ async def afl_fuzz():
             ble = BLEClient()
 
             try:
-                #connecting and rebooting esp logs
-                await ble.connect(DEVICE_NAME)
-                ble.init_logs()
-                await asyncio.sleep(SLEEP_AFTER_RECONNECT)
-                await wait_for_esp_reboot_logs(ble)
-
                 #1. choose a seed from queue, then assign energy
                 seed = random.choice(queue)
                 energy = assign_energy(seed)
                 #example seed ([0x00, 0x01, ....] || [0x01] etc...)
 
                 for _ in range(energy):
+                    #connecting and rebooting esp logs
+                    await ble.connect(DEVICE_NAME)
+                    ble.init_logs()
+                    await asyncio.sleep(SLEEP_AFTER_RECONNECT)
+                    await wait_for_esp_reboot_logs(ble)
+
                     #2. mutate input
                     mutated = mutate_input(seed)
                     print(f"MUTATED SEED BEING TESTED: {mutated}")
@@ -147,6 +147,10 @@ async def afl_fuzz():
                     if is_interesting(responses, logs):
                         save_input(mutated, logs, "interesting")
                         queue.append(mutated)
+
+                    await ble.disconnect()
+                    print(f"[#{i:03}] Disconnected and reset complete.")
+                    await asyncio.sleep(SLEEP_AFTER_RECONNECT)
 
             except Exception as e:
                 print(f"[!] Exception during test #{i}: {e}")

@@ -1,0 +1,9 @@
+Input: 0x0 0x1 0xaa
+Logs:
+  [Bluetooth] Received command: 0x00 (Authenticate)
+  [Auth] Authentication Sucessfull
+  [State] Device state: Authenticated
+  [Bluetooth] Received command: 0x01 (Open)
+  [State] Opening the lock mechanism
+  [State] Lock mechanism open
+  [Bluetooth] Received command: 0xAA (Secret)
