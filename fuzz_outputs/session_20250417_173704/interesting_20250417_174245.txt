@@ -1,0 +1,16 @@
+Input: 0x0 0x1
+Logs:
+  I (620) esp_image: segment 4: paddr=0017afd8 vaddr=40815c30 size=02b9ch ( 11164) load
+  I (626) esp_image: segment 5: paddr=0017db7c vaddr=50000000 size=0001ch (    28) load
+  I (638) boot: Loaded app from partition at offset 0x10000
+  I (639) boot: Disabling RNG early entropy source...
+  
+  [Bluetooth] User Connected
+  [Bluetooth] Received command: 0xAA (Secret)
+  [Bluetooth] Received command: 0x01 (Open)
+  [Bluetooth] Received command: 0x00 (Authenticate)
+  [Auth] Authentication Sucessfull
+  [State] Device state: Authenticated
+  [Bluetooth] Received command: 0x01 (Open)
+  [State] Opening the lock mechanism
+  [State] Lock mechanism open

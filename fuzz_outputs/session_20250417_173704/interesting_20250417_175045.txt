@@ -1,0 +1,4 @@
+Input: 0xff 0x2
+Logs:
+  Exception during BLE write: Not connected
+  Exception during BLE write: Not connected

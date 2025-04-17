@@ -92,7 +92,12 @@ class BLEClient:
             await asyncio.sleep(0.1)
 
     def init_logs(self):
+        self._last_log_index = 0
         self.task_logs = asyncio.create_task(self._serialport_task())
 
     def read_logs(self):
         return self.serialport_logs
+    def read_new_logs(self):
+        logs = self.serialport_logs[self._last_log_index:]
+        self._last_log_index = len(self.serialport_logs)
+        return logs

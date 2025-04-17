@@ -1,108 +1,166 @@
-#!/usr/bin/env python3
-import sys
 import asyncio
-from BLEClient import BLEClient
-from UserInterface import ShowUserInterface
+import random
+import os
 import datetime
+import sys
+from BLEClient import BLEClient
 
 DEVICE_NAME = "Smart Lock [Group 11]"
-
-# Commands
-AUTH = [0x00]
-OPEN = [0x01]
-CLOSE = [0x02]
 PASSCODE = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06]
+AUTH_OPCODE = 0x00
+
+# --- Configuration ---
+SEED_INPUTS = [
+    [0x00],               # AUTH
+    [0x00, 0x01],         # AUTH → OPEN
+    [0x00, 0x01, 0x02],   # AUTH → OPEN → CLOSE
+    [0xAA],               # Hidden command
+]
+VALID_OPCODES = [0x00, 0x01, 0x02, 0xAA]
+MAX_ITERATIONS = 50
+SLEEP_BETWEEN_COMMANDS = 2.0
+SLEEP_AFTER_RECONNECT = 2.0
+timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+OUTPUT_DIR = os.path.join("fuzz_outputs", f"session_{timestamp}")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+#global set, used to store seen log lines, for is_interesting criteria
+seen_log_lines = set()
 
 
-async def manual_cli():
-    ble = BLEClient()
-    ble.init_logs()
+# --- Mutation Engine ---
+def mutate_input(seed):
+    m = seed.copy()
+    mutation_type = random.choice(['flip', 'append', 'delete', 'replace'])
 
-    print(f'[1] Connecting to "{DEVICE_NAME}"...')
-    await ble.connect(DEVICE_NAME)
-    print("[!] Connected. Type 'help' for available commands.")
+    if mutation_type == 'flip' and len(m) > 0:
+        idx = random.randint(0, len(m) - 1)
+        m[idx] ^= 0xFF
+    elif mutation_type == 'append':
+        m.append(random.choice(VALID_OPCODES))
+    elif mutation_type == 'delete' and len(m) > 1:
+        idx = random.randint(0, len(m) - 1)
+        del m[idx]
+    elif mutation_type == 'replace' and len(m) > 0:
+        idx = random.randint(0, len(m) - 1)
+        m[idx] = random.choice(VALID_OPCODES)
+
+    return m[:256]
+
+# --- Interesting Detection ---
+def is_interesting(responses, logs):
+    interesting_keywords = ["secret", "reboot", "error", "state", "debug", "invalid"]
+    for line in logs:
+        if any(k in line.lower() for k in interesting_keywords):
+            return True
+    for res in responses:
+        if isinstance(res, list) and res and res[0] not in [0, 1, 2, 3, 4]:
+            return True
+    return False
+
+# --- Save Result ---
+def save_input(input_seq, logs, label="interesting"):
+    ts = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    filepath = os.path.join(OUTPUT_DIR, f"{label}_{ts}.txt")
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write("Input: " + " ".join(hex(x) for x in input_seq) + "\n")
+        f.write("Logs:\n")
+        for l in logs:
+            f.write("  " + l.strip() + "\n")
+    print(f"[✓] Saved {label} input to {filepath}")
+
+# --- Run Input on Device ---
+async def run_target(ble, input_seq):
+    responses = []
+    full_logs = []
+
+    for opcode in input_seq:
+        command = [opcode]
+        if opcode == AUTH_OPCODE:
+            command += PASSCODE
+
+        ble.read_new_logs()  # Clear previous logs
+        try:
+            res = await ble.write_command(command)
+            await asyncio.sleep(SLEEP_BETWEEN_COMMANDS)
+            logs = ble.read_new_logs()
+        except Exception as e:
+            res = [999]
+            logs = [f"Exception during BLE write: {e}"]
+
+        responses.append(res)
+        full_logs.extend(logs)
+        for line in logs:
+            print("  [ESP]", line)
+
+    return responses, full_logs
+
+# --- Wait for ESP Reboot Indicator ---
+async def wait_for_esp_reboot_logs(ble, timeout=5):
+    print("[*] Waiting for ESP reboot logs...")
+    deadline = asyncio.get_event_loop().time() + timeout
+    while asyncio.get_event_loop().time() < deadline:
+        logs = ble.read_new_logs()
+        if any("boot:" in line.lower() or "esp-rom" in line.lower() for line in logs):
+            print("[✓] Detected ESP reboot.")
+            return True
+        await asyncio.sleep(0.5)
+    print("[!] ESP reboot not detected within timeout.")
+    return False
+
+def choose_next(queue):
+    if random.random() < 0.7:
+        return queue[-1]  # new discovery
+    return random.choice(queue)
+
+def assign_energy(seed):
+    return random.randint(2, 5)
+
+# --- Main Fuzzer ---
+async def afl_fuzz():
+    queue = SEED_INPUTS[:]
 
     try:
-        while True:
-            user_input = input("smartlock> ").strip().lower()
+        for i in range(MAX_ITERATIONS): #limitation, else can remove to run forever
+            print(f"\n[#{i:03}] Starting new test cycle...")
+            print(f"length of queue: {len(queue)}")
+            ble = BLEClient()
 
-            if user_input == "help":
-                print("Commands:")
-                print("  auth         - authenticate with passcode")
-                print("  open         - open the lock")
-                print("  close        - close the lock")
-                print("  send <hex>   - send raw hex bytes (e.g., send 01 ff 10)")
-                print("  logs         - show recent logs")
-                print("  exit         - disconnect and quit")
-            
-            elif user_input == "auth":
-                res = await ble.write_command(AUTH + PASSCODE)
-                print("[<] Response:", res)
+            try:
+                #connecting and rebooting esp logs
+                await ble.connect(DEVICE_NAME)
+                ble.init_logs()
+                await asyncio.sleep(SLEEP_AFTER_RECONNECT)
+                await wait_for_esp_reboot_logs(ble)
 
-            elif user_input == "open":
-                res = await ble.write_command(OPEN)
-                print("[<] Response:", res)
+                #1. choose a seed from queue, then assign energy
+                seed = random.choice(queue)
+                energy = assign_energy(seed)
+                #example seed ([0x00, 0x01, ....] || [0x01] etc...)
 
-            elif user_input == "close":
-                res = await ble.write_command(CLOSE)
-                print("[<] Response:", res)
+                for _ in range(energy):
+                    #2. mutate input
+                    mutated = mutate_input(seed)
+                    print(f"MUTATED SEED BEING TESTED: {mutated}")
+                    responses, logs = await run_target(ble, mutated)
+                    print(f"RESULTING LOGS: {logs}")
+                    if is_interesting(responses, logs):
+                        save_input(mutated, logs, "interesting")
+                        queue.append(mutated)
 
-            elif user_input.startswith("send "):
-                try:
-                    raw = user_input[5:].split()
-                    bytes_to_send = [int(b, 16) for b in raw]
-                    res = await ble.write_command(bytes_to_send)
-                    print("[<] Response:", res)
-                except ValueError:
-                    print("[!] Invalid hex format. Use: send 01 ff ab ...")
+            except Exception as e:
+                print(f"[!] Exception during test #{i}: {e}")
 
-            elif user_input == "logs":
-                logs = ble.read_logs()
-                if logs:
-                    print("[📜 Logs]")
-                    for line in logs[-10:]:
-                        print(" ", line)
-                else:
-                    print("[!] No logs yet.")
-
-            elif user_input in ("exit", "quit"):
-                break
-
-            else:
-                print("[!] Unknown command. Type 'help'.")
+            finally:
+                await ble.disconnect()
+                print(f"[#{i:03}] Disconnected and reset complete.")
+                await asyncio.sleep(SLEEP_AFTER_RECONNECT)
 
     except KeyboardInterrupt:
-        print("\n[!] Ctrl+C pressed. Exiting...")
+        print("\n[!] Fuzzing interrupted by user.")
 
-    except Exception as e:
-        print(f"\n[!] Unexpected exception: {e}")
+    print("\n[✓] Fuzzing complete.")
+    sys.exit(0)
 
-    finally:
-        print("[!] Disconnecting...")
-        await ble.disconnect()
-
-        # Dump all logs after crash/exit
-        logs = ble.read_logs()
-        print("\n[🔚 Full ESP32 Logs from this session]")
-        if logs:
-            for line in logs:
-                print(" ", line)
-        else:
-            print(" No logs were captured.")
-
-        # Optional: Save to file
-        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        log_filename = f"cli_session_logs_{timestamp}.txt"
-        with open(log_filename, "w") as f:
-            for line in logs:
-                f.write(line + "\n")
-        print(f"\n[✔] Logs saved to {log_filename}")
-
-# Entrypoint
-if len(sys.argv) > 1 and sys.argv[1] == "--gui":
-    ShowUserInterface()
-else:
-    try:
-        asyncio.run(manual_cli())
-    except KeyboardInterrupt:
-        print("\nProgram Exited by User!")
+if __name__ == "__main__":
+    asyncio.run(afl_fuzz())

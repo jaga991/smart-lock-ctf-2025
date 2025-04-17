@@ -1,0 +1,5 @@
+Input: 0xff 0x1 0xaa 0x1
+Logs:
+  [Bluetooth] Received command: 0x01 (Open)
+  [Bluetooth] Received command: 0xAA (Secret)
+  [Bluetooth] Received command: 0x01 (Open)

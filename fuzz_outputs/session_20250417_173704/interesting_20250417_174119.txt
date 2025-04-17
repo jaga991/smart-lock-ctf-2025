@@ -1,0 +1,3 @@
+Input: 0xff 0xaa
+Logs:
+  [Bluetooth] Received command: 0xAA (Secret)
