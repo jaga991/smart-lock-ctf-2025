@@ -15,14 +15,11 @@ SEED_INPUTS = [
     [0x00, 0x01],
     [0x00, 0x01, 0x02],
     [0xAA],  # Example hidden command
-    [0xA],
-    [0xB],
-    [0x3F]
 ]
 
 MAX_ITERATIONS = 50
-SLEEP_BETWEEN_COMMANDS = 3.0
-SLEEP_AFTER_RECONNECT = 5.0
+SLEEP_BETWEEN_COMMANDS = 1.5
+SLEEP_AFTER_RECONNECT = 4.0
 
 timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 OUTPUT_DIR = os.path.join("AFL_Fuzz_Outputs", f"session_{timestamp}")
@@ -72,15 +69,11 @@ async def run_target(ble, input_seq):
         if opcode == AUTH_OPCODE:
             command += PASSCODE
 
-        ble.read_new_logs() #clear previous logs
+        ble.read_new_logs()
         try:
             res = await ble.write_command(command)
             await asyncio.sleep(SLEEP_BETWEEN_COMMANDS)
             new_logs = ble.read_new_logs()
-
-            print("  [ESP LOGS]")
-            for line in new_logs:
-                print("   ", line)
         except Exception as e:
             res = [999]
             new_logs = [f"Exception: {e}"]

@@ -7,6 +7,8 @@ import os
 DEVICE_NAME = "Smart Lock [Group 11]"
 PASSCODE = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06]
 AUTH = [0x00]
+OPEN = [0x01]
+CLOSE = [0x02]
 
 # AFL-like configuration
 SEED_QUEUE = [
@@ -28,7 +30,7 @@ def assign_energy(input_seq):
     # Fixed energy value; could be adjusted based on length or input hash
     return 5
 
-def mutate(input_seq):
+def mutate_input(input_seq):
     m = input_seq.copy()
     for _ in range(random.randint(1, 5)):
         if len(m) > 0 and random.random() < 0.5:

@@ -19,15 +19,19 @@ class BLEClient:
         device = await BleakScanner.find_device_by_name(
             device_name, cb=dict(use_bdaddr=True)
         )
-
         if device is None:
             print(f'[X] Failure: Device "{device_name}" not found!')
-            return None
+            return False
 
         self.device_name = device_name
         self.client = BleakClient(device)
 
-        return await self.client.connect()
+        connected = await self.client.connect()
+        if connected:
+            print(f"[✓] Connected to {device_name}")
+        else:
+            print(f"[X] Failed to connect to {device_name}")
+        return connected
 
     async def disconnect(self):
         if self.client:
