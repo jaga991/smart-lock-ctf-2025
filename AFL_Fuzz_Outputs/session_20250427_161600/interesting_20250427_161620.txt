@@ -1,3 +1,0 @@
-Input: 0x0
-Logs:
-  Exception: 'NoneType' object has no attribute 'write_gatt_char'

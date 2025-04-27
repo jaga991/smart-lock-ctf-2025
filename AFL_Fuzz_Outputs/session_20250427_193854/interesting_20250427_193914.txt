@@ -1,4 +1,4 @@
-Input: 0x0 0x0 0x2
+Input: 0x0 0x0 0xa5
 Logs:
   [Bluetooth] Received command: 0x00 (Authenticate)
   [Auth] Authentication Sucessfull
@@ -6,6 +6,3 @@ Logs:
   [Bluetooth] Received command: 0x00 (Authenticate)
   [Auth] Authentication Sucessfull
   [State] Device state: Authenticated
-  [Bluetooth] Received command: 0x02 (Close)
-  [State] Closing the lock mechanism
-  [State] Lock mechanism closed

@@ -1,3 +1,4 @@
-Input: 0x1
+Input: 0x29 0xdf 0x1 0xa
 Logs:
   [Bluetooth] Received command: 0x01 (Open)
+  [State] Servo Disabled

@@ -1,2 +1,3 @@
 @REM Start Smartlock GUI demo
-.\venv\python Smartlock.py %1
+.\venv\python Smartlock.py %*
+

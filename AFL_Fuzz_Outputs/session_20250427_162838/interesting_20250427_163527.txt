@@ -1,5 +1,0 @@
-Input: 0x1 0x0 0x8d
-Logs:
-  Exception: Service Discovery has not been performed yet
-  Exception: Service Discovery has not been performed yet
-  Exception: Service Discovery has not been performed yet

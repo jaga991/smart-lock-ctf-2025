@@ -1,3 +1,0 @@
-Input: 0xb 0xf8
-Logs:
-  [State] Servo Enabled

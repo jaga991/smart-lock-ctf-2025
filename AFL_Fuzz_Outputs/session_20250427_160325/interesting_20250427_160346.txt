@@ -1,3 +1,0 @@
-Input: 0xfa 0x1
-Logs:
-  I (353) esp_image: segment 3: paddr=0016b044 vaddr=40805c98 size[Bluetooth] Received command: 0x01 (Open)

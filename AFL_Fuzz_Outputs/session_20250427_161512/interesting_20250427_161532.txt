@@ -1,6 +1,0 @@
-Input: 0x0 0x68 0x2 0x2
-Logs:
-  Exception: 'NoneType' object has no attribute 'write_gatt_char'
-  Exception: 'NoneType' object has no attribute 'write_gatt_char'
-  Exception: 'NoneType' object has no attribute 'write_gatt_char'
-  Exception: 'NoneType' object has no attribute 'write_gatt_char'

@@ -1,4 +1,0 @@
-Input: 0xb 0x14 0xb
-Logs:
-  [State] Servo Enabled
-  [State] Servo Enabled
