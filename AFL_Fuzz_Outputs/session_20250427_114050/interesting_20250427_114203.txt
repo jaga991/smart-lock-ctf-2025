@@ -1,0 +1,5 @@
+Input: 0x0 0x81 0x8a
+Logs:
+  Exception: [WinError -2147023673] The operation was canceled by the user
+  Exception: Not connected
+  Exception: Not connected

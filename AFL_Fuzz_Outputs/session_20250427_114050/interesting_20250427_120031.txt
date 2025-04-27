@@ -1,0 +1,4 @@
+Input: 0x1 0x2 0x7b
+Logs:
+  [Bluetooth] Received command: 0x01 (Open)
+  [Bluetooth] Received command: 0x02 (Close)

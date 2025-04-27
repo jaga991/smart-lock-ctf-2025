@@ -35,6 +35,7 @@ class BLEClient:
 
     async def disconnect(self):
         if self.client:
+            print("Disconnecting...")
             return await self.client.disconnect()
         return True
 
@@ -96,8 +97,10 @@ class BLEClient:
             await asyncio.sleep(0.1)
 
     def init_logs(self):
+        print("Initing Logs")
         self._last_log_index = 0
         self.task_logs = asyncio.create_task(self._serialport_task())
+        print("Finish Init Logs")
 
     def read_logs(self):
         return self.serialport_logs

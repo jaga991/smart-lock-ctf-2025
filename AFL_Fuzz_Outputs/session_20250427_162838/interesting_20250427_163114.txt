@@ -1,0 +1,6 @@
+Input: 0x1 0x0
+Logs:
+  [Bluetooth] Received command: 0x01 (Open)
+  [Bluetooth] Received command: 0x00 (Authenticate)
+  [Auth] Authentication Sucessfull
+  [State] Device state: Authenticated

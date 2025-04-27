@@ -1,0 +1,3 @@
+Input: 0xa
+Logs:
+  [State] Servo Disabled
