@@ -1,3 +1,0 @@
-Input: 0x19 0x2
-Logs:
-  [Bluetooth] Received command: 0x02 (Close)

@@ -12,18 +12,20 @@ PASSCODE = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06]
 AUTH_OPCODE = 0x00
 
 SEED_INPUTS = [
-    [0x00],
-    [0x00, 0x01],
-    [0x00, 0x01, 0x02],
-    [0x00, 0xAA],
-    [0x00, 0xA],
-    [0x00, 0xB],
-    [0x00, 0x3F],
+    [[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06]],
+    [[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06], [0x01]],
+    [[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06], [0x01], [0x02]],
+    [[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06], [0xAA]],
+    [[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06], [0xA]],
+    [[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06], [0xB]],
+    [[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06], [0x3F]],
+    [[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06], [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]],
+    [[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06], [0x3F, 0x3F, 0x3F, 0x3F, 0x3F, 0x3F]]
 ]
 
-MAX_ITERATIONS = 20
-SLEEP_BETWEEN_COMMANDS = 2.0
-SLEEP_AFTER_RECONNECT = 4.0
+MAX_ITERATIONS = 10
+SLEEP_BETWEEN_COMMANDS = 1.5
+SLEEP_AFTER_RECONNECT = 3.0
 WEIGHT_DECAY = 0.9
 HIGH_WEIGHT = 3.0
 LOW_WEIGHT = 0.5
@@ -37,39 +39,57 @@ seen_log_lines = set()
 seen_responses = set()
 seen_inputs = set()
 
+# === Helper ===
+def make_hashable(x):
+    if isinstance(x, list):
+        return tuple(make_hashable(i) for i in x)
+    return x
+
 # === Mutation ===
 def mutate_input(seed):
-    m = seed.copy()
-    num_mutations = random.randint(1, 4)  # 1-4 mutations now
+    # Deep copy the seed properly
+    m = [cmd.copy() for cmd in seed]  # every element is a list
+    num_mutations = random.randint(1, 4)
 
     for _ in range(num_mutations):
-        mutation_type = random.choice(['flip', 'insert', 'delete', 'replace', 'duplicate', 'lengthen'])
+        mutation_type = random.choice([
+            'insert_list', 'delete_list', 'duplicate_list', 'mutate_inside_list'
+        ])
 
-        if mutation_type == 'flip' and len(m) > 0:
-            idx = random.randint(0, len(m) - 1)
-            m[idx] ^= 1 << random.randint(0, 7)
-
-        elif mutation_type == 'insert':
+        if mutation_type == 'insert_list':
             idx = random.randint(0, len(m))
-            m.insert(idx, random.randint(0, 255))
+            new_list = [random.randint(0, 255) for _ in range(random.randint(1, 6))]
+            m.insert(idx, new_list)
 
-        elif mutation_type == 'delete' and len(m) > 1:
+        elif mutation_type == 'delete_list' and len(m) > 1:
             idx = random.randint(0, len(m) - 1)
             del m[idx]
 
-        elif mutation_type == 'replace' and len(m) > 0:
+        elif mutation_type == 'duplicate_list' and len(m) > 0:
             idx = random.randint(0, len(m) - 1)
-            m[idx] = random.randint(0, 255)
+            m.insert(idx, m[idx].copy())
 
-        elif mutation_type == 'duplicate' and len(m) > 0:
+        elif mutation_type == 'mutate_inside_list' and len(m) > 0:
             idx = random.randint(0, len(m) - 1)
-            m.insert(idx, m[idx])
+            elem_list = m[idx]
+            if len(elem_list) > 0:
+                sub_mutation = random.choice(['flip_byte', 'insert_byte', 'delete_byte', 'replace_byte'])
 
-        elif mutation_type == 'lengthen':
-            idx = random.randint(0, len(m))
-            m.insert(idx, random.randint(0, 255))  # Insert random byte, making input longer
+                byte_idx = random.randint(0, len(elem_list) - 1)
 
-    return m[:256]  # limit length just in case
+                if sub_mutation == 'flip_byte':
+                    elem_list[byte_idx] ^= 1 << random.randint(0,7)
+
+                elif sub_mutation == 'insert_byte':
+                    elem_list.insert(byte_idx, random.randint(0, 255))
+
+                elif sub_mutation == 'delete_byte' and len(elem_list) > 1:
+                    del elem_list[byte_idx]
+
+                elif sub_mutation == 'replace_byte':
+                    elem_list[byte_idx] = random.randint(0, 255)
+
+    return m[:256]  # Limit total number of lists
 
 # === Energy Assignment ===
 def assign_energy(seed):
@@ -110,42 +130,66 @@ def is_interesting(responses, logs):
 # === Save and Load Queue (JSON version) ===
 def save_queue(queue):
     filepath = os.path.join(OUTPUT_DIR, "saved_queue.json")
-    serializable = [{"input": seq, "weight": weight} for seq, weight in queue]
+    save_data = {
+        "queue": [{"input": seq, "weight": weight} for seq, weight in queue],
+        "seen_log_lines": list(seen_log_lines),
+        "seen_responses": [list(res) for res in seen_responses],
+    }
     with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(serializable, f, indent=2)
-    print(f"[✓] Queue saved to {filepath}")
+        json.dump(save_data, f, indent=2)
+    print(f"[✓] Full state saved to {filepath}")
 
 def load_queue(path):
+    global seen_log_lines, seen_responses
+
     with open(path, "r", encoding="utf-8") as f:
-        loaded_serialized = json.load(f)
-    loaded_queue = [(entry["input"], entry["weight"]) for entry in loaded_serialized]
+        data = json.load(f)
 
-    # Rebuild seen_inputs
+    loaded_queue = [(entry["input"], entry["weight"]) for entry in data["queue"]]
+    seen_log_lines = set(data.get("seen_log_lines", []))
+    seen_responses = set(tuple(res) for res in data.get("seen_responses", []))
+
     for input_seq, _ in loaded_queue:
-        seen_inputs.add(tuple(input_seq))
+        seen_inputs.add(make_hashable(input_seq))
 
-    print(f"[✓] Loaded {len(loaded_queue)} inputs from {path}")
+    print(f"[✓] Loaded {len(loaded_queue)} inputs and full seen sets from {path}")
     return loaded_queue
 
 # === Save interesting test case ===
-def save_input(input_seq, logs, label="interesting"):
+def save_input(input_seq, logs, responses=None, label="interesting"):
     ts = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     filepath = os.path.join(OUTPUT_DIR, f"{label}_{ts}.txt")
     with open(filepath, "w", encoding="utf-8") as f:
-        f.write("Input: " + " ".join(hex(x) for x in input_seq) + "\n")
+        # Save input using JSON so it preserves nested structure
+        f.write("Input:\n")
+        f.write(json.dumps(input_seq, indent=2))
+        f.write("\n\n")
+
+        # Save responses if provided
+        if responses is not None:
+            f.write("Responses:\n")
+            f.write(json.dumps(responses, indent=2))
+            f.write("\n\n")
+
+        # Save logs
         f.write("Logs:\n")
         for l in logs:
             f.write("  " + l.strip() + "\n")
+
     print(f"[✓] Saved {label} input to {filepath}")
+
 
 # === Run Input ===
 async def run_target(ble, input_seq):
     responses = []
     logs = []
-    for opcode in input_seq:
-        command = [opcode]
-        if opcode == AUTH_OPCODE:
-            command += PASSCODE
+
+
+    for item in input_seq:
+        if isinstance(item, list):
+            command = item
+        else:
+            command = [item]
 
         ble.read_new_logs()
         try:
@@ -188,21 +232,24 @@ async def afl_fuzz(queue):
             print(f"\n[#{i:03}] Starting test cycle...")
             ble = BLEClient()
             ble.init_logs()
-
             try:
                 seed = choose_next(queue)
                 energy = assign_energy(seed)
+                # ble.init_logs()
 
                 for _ in range(energy):
                     await ble.connect(DEVICE_NAME)
                     await asyncio.sleep(SLEEP_AFTER_RECONNECT)
                     await wait_for_esp_reboot_logs(ble)
-
+                    # Always send valid authentication first
+                    print("AUTHENTICATING FIRST BEFORE TESTING")
+                    auth_command = [0x00] + PASSCODE
+                    await ble.write_command(auth_command)
+                    await asyncio.sleep(SLEEP_BETWEEN_COMMANDS)
+                    print("AUTHENTICATING COMPLETE, RUNNING TEST")
                     mutated = mutate_input(seed)
-                    mutated_tuple = tuple(mutated)
 
-                    # Duplicate detection
-                    if mutated_tuple in seen_inputs:
+                    if make_hashable(mutated) in seen_inputs:
                         print("[!] Skipping duplicate mutated input.")
                         await ble.disconnect()
                         await asyncio.sleep(SLEEP_AFTER_RECONNECT)
@@ -214,15 +261,14 @@ async def afl_fuzz(queue):
                     is_interesting_case = is_interesting(responses, logs)
                     new_weight = HIGH_WEIGHT if is_interesting_case else LOW_WEIGHT
                     queue.append((mutated, new_weight))
-                    seen_inputs.add(mutated_tuple)
+                    seen_inputs.add(make_hashable(mutated))
 
                     if is_interesting_case:
-                        save_input(mutated, logs)
+                        save_input(mutated, logs, responses)
 
                     await ble.disconnect()
                     await asyncio.sleep(SLEEP_AFTER_RECONNECT)
 
-                # Decay existing weights
                 for idx in range(len(queue)):
                     seq, w = queue[idx]
                     queue[idx] = (seq, w * WEIGHT_DECAY)
@@ -258,6 +304,6 @@ if __name__ == "__main__":
     else:
         queue = [(seed, 1.0) for seed in SEED_INPUTS]
         for seed in SEED_INPUTS:
-            seen_inputs.add(tuple(seed))
+            seen_inputs.add(make_hashable(seed))
 
     asyncio.run(afl_fuzz(queue))

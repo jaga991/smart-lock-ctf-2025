@@ -1,9 +1,0 @@
-Input: 0x2 0x1 0xaa
-Logs:
-  [Bluetooth] Received command: 0x02 (Close)
-  [State] Closing the lock mechanism
-  [State] Lock mechanism closed
-  [Bluetooth] Received command: 0x01 (Open)
-  [State] Opening the lock mechanism
-  [State] Lock mechanism open
-  [Bluetooth] Received command: 0xAA (Secret)
